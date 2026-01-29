@@ -1,0 +1,4 @@
+class: ClassificationTask
+fields:
+  hash: String
+  ocrText: String

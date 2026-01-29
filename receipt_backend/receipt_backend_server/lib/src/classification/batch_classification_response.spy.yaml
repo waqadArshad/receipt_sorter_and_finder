@@ -1,0 +1,3 @@
+class: BatchClassificationResponse
+fields:
+  results: List<ClassificationResult>

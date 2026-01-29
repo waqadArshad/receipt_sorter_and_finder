@@ -1,0 +1,9 @@
+Analyzing receipt_sorter_and_finder...                          
+
+   info - 'authenticationKeyManager' is deprecated and shouldn't be used. Use authKeyProvider instead. This will be removed in future releases - lib\services\api_service.dart:15:7 - deprecated_member_use
+warning - Unused import: 'package:image_hash/image_hash.dart' - lib\services\image_hash_service.dart:4:8 - unused_import
+   info - Don't invoke 'print' in production code - lib\services\image_hash_service.dart:65:7 - avoid_print
+warning - Unused import: 'dart:io' - lib\ui\image_detail_screen.dart:1:8 - unused_import
+  error - The method 'AssetEntityImage' isn't defined for the type 'ImageDetailScreen' - lib\ui\image_detail_screen.dart:30:22 - undefined_method
+  error - The type 'ProcessingStatus' is not exhaustively matched by the switch cases since it doesn't match 'ProcessingStatus.classificationQueued' - lib\ui\image_detail_screen.dart:89:5 - non_exhaustive_switch_statement
+
