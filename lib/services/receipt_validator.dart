@@ -17,40 +17,57 @@ class ReceiptValidator {
 
   /// Returns true if the text looks like a receipt/invoice
   static bool isValidReceipt(String text) {
-    if (text.isEmpty) return false;
+    if (text.trim().length < 10) return false; // Too short to be a receipt
     final lower = text.toLowerCase();
     
     int score = 0;
+    bool hasPriceLikePattern = RegExp(r'\d+[.,]\d{2}').hasMatch(text);
 
-    // 1. Keyword Check (Strong Signal)
-    for (final kw in _requiredKeywords) {
-      if (lower.contains(kw)) {
-        score += 2;
-      }
+    // 1. Keyword Check (Max 4 points)
+    // Primary Keywords (Strong indicators)
+    if (lower.contains('total') || lower.contains('amount') || lower.contains('balance') || lower.contains('due')) {
+      score += 3;
     }
+    
+    // Secondary Keywords (Context)
+    int secondaryMatches = 0;
+    for (final kw in _requiredKeywords) {
+       if (lower.contains(kw) && !['total', 'amount', 'balance', 'due'].contains(kw)) {
+         secondaryMatches++;
+       }
+    }
+    // Cap secondary points at 2
+    score += (secondaryMatches > 0 ? 1 : 0) + (secondaryMatches > 2 ? 1 : 0);
 
-    // 2. Date Pattern Check
+    // 2. Date Pattern Check (Max 2 points)
+    bool hasDate = false;
     for (final pattern in _datePatterns) {
       if (RegExp(pattern, caseSensitive: false).hasMatch(lower)) {
-        score += 3;
+        hasDate = true;
+        break;
       }
     }
+    if (hasDate) score += 2;
 
-    // 3. Currency Check
+    // 3. Currency Check (Max 2 points)
+    bool hasCurrency = false;
     for (final pattern in _currencySymbols) {
       if (RegExp(pattern, caseSensitive: false).hasMatch(lower)) {
-        score += 3;
+        hasCurrency = true;
+        break;
       }
     }
+    if (hasCurrency) score += 2;
 
-    // 4. Numeric Density Check (Receipts usually have many numbers)
+    // 4. Price Pattern (Critical for Receipts)
+    if (hasPriceLikePattern) score += 2;
+
+    // 5. Numeric Density Check
     final numCount = RegExp(r'\d').allMatches(text).length;
     if (numCount > 5) score += 1;
-    if (numCount > 10) score += 1;
 
     // Minimum score threshold
-    // e.g. "Total: $50" -> Total(2) + $(3) + Num(1) = 6 (Pass)
-    // "Happy Birthday!" -> 0 (Fail)
-    return score >= 4;
+    // Needs at least: (Strong Keyword + Price/Currency) OR (Date + Currency + Price)
+    return score >= 5;
   }
 }

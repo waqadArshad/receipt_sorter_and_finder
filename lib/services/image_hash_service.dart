@@ -51,19 +51,11 @@ class ImageHashService {
   /// Robust against resizing, format changes, and minor edits.
   /// Slower (requires image decoding).
   Future<String> _generatePerceptualHash(File imageFile) async {
-    try {
-      final bytes = await imageFile.readAsBytes();
-      final image = img.decodeImage(bytes);
-      if (image == null) throw Exception('Could not decode image');
-      
-      // Use Phash from image_hash package
-      // Note: Actual API might vary, assuming standard Phash().create(image) or similar
-      // based on typical library structure. If fail, fallback to placeholder.
-      return 'phash_placeholder_${imageFile.path.hashCode}'; // Placeholder until exact API verified
-
-    } catch (e) {
-      print('Error generating perceptual hash: $e');
-      return 'hash_error_${DateTime.now().millisecondsSinceEpoch}';
-    }
+    // OPTIMIZATION: Removed expensive img.decodeImage() call
+    // Since we are currently returning a placeholder, decoding the full image
+    // caused massive main-thread jank and memory pressure for no reason.
+    // TODO: When implementing real pHash, MOVE THIS TO AN ISOLATE (compute).
+    
+    return 'phash_placeholder_${imageFile.path.hashCode}'; 
   }
 }

@@ -3,6 +3,7 @@ import 'package:receipt_backend_client/receipt_backend_client.dart';
 import '../../db/database_helper.dart';
 import '../../models/processed_image.dart';
 import 'api_service.dart';
+import 'receipt_validator.dart';
 
 class ClassificationService {
   static final ClassificationService _instance = ClassificationService._internal();
@@ -34,8 +35,20 @@ class ClassificationService {
       for (var row in pendingRows) {
         final img = ProcessedImage.fromMap(row);
         if (img.ocrText != null && img.metadataHash != null) {
-          // Use metadata hash as ID for now, or combine
-          // Ideally use the consistent hash we agreed on (perceptual or metadata)
+          // SAFETY CHECK: Re-validate with latest strict rules
+          // This cleans up "junk" that might have passed the old lenient validator
+          if (!ReceiptValidator.isValidReceipt(img.ocrText!)) {
+            debugPrint('Skipping invalid receipt (Safety Check): ${img.id}');
+            // Move to Trash immediately
+            await db.update(
+              'processed_images',
+              {'processing_status': ProcessingStatus.skipped.name},
+              where: 'id = ?',
+              whereArgs: [img.id],
+            );
+            continue; 
+          }
+
           tasks.add(ClassificationTask(hash: img.metadataHash!, ocrText: img.ocrText!));
           hashes.add(img.metadataHash!);
         }

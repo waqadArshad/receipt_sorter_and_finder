@@ -27,6 +27,29 @@ class _GalleryScreenState extends State<GalleryScreen> {
   void initState() {
     super.initState();
     _requestPermissionAndLoad();
+    
+    // LIVE UPDATES: Refresh tabs when pipeline makes progress
+    _pipeline.progressNotifier.addListener(_onPipelineProgress);
+  }
+
+  @override
+  void dispose() {
+    _pipeline.progressNotifier.removeListener(_onPipelineProgress);
+    super.dispose();
+  }
+
+  int _lastRefreshTime = 0;
+  void _onPipelineProgress() {
+    // Only refresh when batch completes or resets
+    final val = _pipeline.progressNotifier.value;
+    if (val >= 1.0 || val == 0.0) {
+      // Small debounce to prevent double-firing
+      final now = DateTime.now().millisecondsSinceEpoch;
+      if (now - _lastRefreshTime > 1000) {
+        _lastRefreshTime = now;
+        if (mounted) _loadTabAssets();
+      }
+    }
   }
 
   Future<void> _requestPermissionAndLoad() async {
@@ -112,7 +135,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
       );
 
       if (albums.isNotEmpty) {
-        final List<AssetEntity> assets = await albums[0].getAssetListRange(start: 0, end: 100);
+        final List<AssetEntity> assets = await albums[0].getAssetListRange(start: 0, end: 1000);
 
         setState(() {
           _assets = assets;
@@ -185,12 +208,61 @@ class _GalleryScreenState extends State<GalleryScreen> {
               },
             ),
             IconButton(icon: const Icon(Icons.refresh), onPressed: _requestPermissionAndLoad),
+            // DEV ONLY: Clear DB Button
+            IconButton(
+              icon: const Icon(Icons.delete_forever, color: Colors.red), 
+              onPressed: () async {
+                 final confirm = await showDialog<bool>(
+                   context: context,
+                   builder: (context) => AlertDialog(
+                     title: const Text('Reset Everything?'),
+                     content: const Text('This will wipe the local database. All images will need to be re-scanned.'),
+                     actions: [
+                       TextButton(child: const Text('Cancel'), onPressed: () => Navigator.pop(context, false)),
+                       TextButton(child: const Text('NUKE IT', style: TextStyle(color: Colors.red)), onPressed: () => Navigator.pop(context, true)),
+                     ],
+                   ),
+                 );
+                 
+                 if (confirm == true) {
+                   await DatabaseHelper.instance.clearAllData();
+                   setState(() {
+                     _assets = [];
+                     _processedAssets = [];
+                     _pendingAssets = [];
+                     _skippedAssets = [];
+                   });
+                   await _requestPermissionAndLoad(); // Reload and re-scan
+                 }
+              }
+            ),
           ],
         ),
 
         body: Column(
           children: [
             _buildPermissionWarningIfNeeded(),
+            
+            // Progress Bar for Background Processing
+            ValueListenableBuilder<double>(
+              valueListenable: _pipeline.progressNotifier,
+              builder: (context, value, child) {
+                if (value <= 0 || value >= 1.0) return const SizedBox.shrink();
+                return Column(
+                  children: [
+                    LinearProgressIndicator(value: value, minHeight: 4),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: Text(
+                        'Scanning Gallery: ${(value * 100).toStringAsFixed(0)}%',
+                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+
             Expanded(
               child: TabBarView(
                 children: [
