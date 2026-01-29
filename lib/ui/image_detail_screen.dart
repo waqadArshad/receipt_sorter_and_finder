@@ -54,10 +54,66 @@ class ImageDetailScreen extends StatelessWidget {
                   _buildStatusBadge(context),
                   const SizedBox(height: 16),
                   
+                  // Structured Data (if processed)
+                  if (processedData?.processingStatus == ProcessingStatus.completed) ...[
+                    Text(
+                      'Receipt Details:',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Card(
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (processedData?.merchantName != null)
+                              _buildDetailRow(Icons.store, 'Merchant', processedData!.merchantName!),
+                            
+                            // Sender (always show if available)
+                            if (processedData?.senderName != null)
+                              _buildDetailRow(
+                                Icons.person_outline, 
+                                'From', 
+                                processedData!.senderName!
+                              ),
+                            
+                            // Recipient (always show if available)
+                            if (processedData?.recipientName != null)
+                              _buildDetailRow(
+                                Icons.person, 
+                                'To', 
+                                processedData!.recipientName!
+                              ),
+                            
+                            if (processedData?.amount != null)
+                              _buildDetailRow(
+                                Icons.attach_money, 
+                                processedData!.transactionType == 'credit' ? 'Received' : 
+                                processedData!.transactionType == 'debit' ? 'Sent' :
+                                processedData!.transactionType == 'third_party' ? 'Amount' : 'Amount',
+                                '\$${processedData!.amount!.toStringAsFixed(2)}'
+                              ),
+                            if (processedData?.transactionDate != null)
+                              _buildDetailRow(Icons.calendar_today, 'Date', processedData!.transactionDate!.toString().split(' ')[0]),
+                            if (processedData?.category != null)
+                              _buildDetailRow(Icons.category, 'Category', processedData!.category!),
+                            if (processedData?.documentType != null)
+                              _buildDetailRow(Icons.description, 'Type', processedData!.documentType!),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
                   // OCR Results
                   if (processedData?.ocrText != null) ...[
                     Text(
-                      'Extracted Text:',
+                      'Raw OCR Text:',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -142,6 +198,42 @@ class ImageDetailScreen extends StatelessWidget {
         style: const TextStyle(color: Colors.white),
       ),
       backgroundColor: color,
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: Colors.blue.shade700),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -19,8 +19,11 @@ abstract class ClassificationResult implements _i1.SerializableModel {
     this.category,
     required this.confidence,
     this.merchantName,
+    this.senderName,
+    this.recipientName,
     this.totalAmount,
     this.currency,
+    this.transactionType,
     this.transactionDate,
     this.summary,
   });
@@ -31,8 +34,11 @@ abstract class ClassificationResult implements _i1.SerializableModel {
     String? category,
     required double confidence,
     String? merchantName,
+    String? senderName,
+    String? recipientName,
     double? totalAmount,
     String? currency,
+    String? transactionType,
     DateTime? transactionDate,
     String? summary,
   }) = _ClassificationResultImpl;
@@ -46,8 +52,11 @@ abstract class ClassificationResult implements _i1.SerializableModel {
       category: jsonSerialization['category'] as String?,
       confidence: (jsonSerialization['confidence'] as num).toDouble(),
       merchantName: jsonSerialization['merchantName'] as String?,
+      senderName: jsonSerialization['senderName'] as String?,
+      recipientName: jsonSerialization['recipientName'] as String?,
       totalAmount: (jsonSerialization['totalAmount'] as num?)?.toDouble(),
       currency: jsonSerialization['currency'] as String?,
+      transactionType: jsonSerialization['transactionType'] as String?,
       transactionDate: jsonSerialization['transactionDate'] == null
           ? null
           : _i1.DateTimeJsonExtension.fromJson(
@@ -67,9 +76,15 @@ abstract class ClassificationResult implements _i1.SerializableModel {
 
   String? merchantName;
 
+  String? senderName;
+
+  String? recipientName;
+
   double? totalAmount;
 
   String? currency;
+
+  String? transactionType;
 
   DateTime? transactionDate;
 
@@ -84,8 +99,11 @@ abstract class ClassificationResult implements _i1.SerializableModel {
     String? category,
     double? confidence,
     String? merchantName,
+    String? senderName,
+    String? recipientName,
     double? totalAmount,
     String? currency,
+    String? transactionType,
     DateTime? transactionDate,
     String? summary,
   });
@@ -98,8 +116,11 @@ abstract class ClassificationResult implements _i1.SerializableModel {
       if (category != null) 'category': category,
       'confidence': confidence,
       if (merchantName != null) 'merchantName': merchantName,
+      if (senderName != null) 'senderName': senderName,
+      if (recipientName != null) 'recipientName': recipientName,
       if (totalAmount != null) 'totalAmount': totalAmount,
       if (currency != null) 'currency': currency,
+      if (transactionType != null) 'transactionType': transactionType,
       if (transactionDate != null) 'transactionDate': transactionDate?.toJson(),
       if (summary != null) 'summary': summary,
     };
@@ -120,8 +141,11 @@ class _ClassificationResultImpl extends ClassificationResult {
     String? category,
     required double confidence,
     String? merchantName,
+    String? senderName,
+    String? recipientName,
     double? totalAmount,
     String? currency,
+    String? transactionType,
     DateTime? transactionDate,
     String? summary,
   }) : super._(
@@ -130,8 +154,11 @@ class _ClassificationResultImpl extends ClassificationResult {
          category: category,
          confidence: confidence,
          merchantName: merchantName,
+         senderName: senderName,
+         recipientName: recipientName,
          totalAmount: totalAmount,
          currency: currency,
+         transactionType: transactionType,
          transactionDate: transactionDate,
          summary: summary,
        );
@@ -146,8 +173,11 @@ class _ClassificationResultImpl extends ClassificationResult {
     Object? category = _Undefined,
     double? confidence,
     Object? merchantName = _Undefined,
+    Object? senderName = _Undefined,
+    Object? recipientName = _Undefined,
     Object? totalAmount = _Undefined,
     Object? currency = _Undefined,
+    Object? transactionType = _Undefined,
     Object? transactionDate = _Undefined,
     Object? summary = _Undefined,
   }) {
@@ -157,8 +187,15 @@ class _ClassificationResultImpl extends ClassificationResult {
       category: category is String? ? category : this.category,
       confidence: confidence ?? this.confidence,
       merchantName: merchantName is String? ? merchantName : this.merchantName,
+      senderName: senderName is String? ? senderName : this.senderName,
+      recipientName: recipientName is String?
+          ? recipientName
+          : this.recipientName,
       totalAmount: totalAmount is double? ? totalAmount : this.totalAmount,
       currency: currency is String? ? currency : this.currency,
+      transactionType: transactionType is String?
+          ? transactionType
+          : this.transactionType,
       transactionDate: transactionDate is DateTime?
           ? transactionDate
           : this.transactionDate,

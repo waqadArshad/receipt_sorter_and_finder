@@ -3,7 +3,9 @@ import 'package:photo_manager/photo_manager.dart';
 import '../../db/database_helper.dart';
 import '../../models/processed_image.dart';
 import '../image_hash_service.dart';
+import '../receipt_validator.dart';
 import '../ocr_service.dart';
+
 import '../classification_service.dart';
 
 class ProcessingPipeline {
@@ -74,19 +76,25 @@ class ProcessingPipeline {
         try {
           final ocrText = await _ocrService.extractText(file);
           
-          // 6. Save OCR Result
+          
+          // 6. Validate Text (Gatekeeper)
+          final isValid = ReceiptValidator.isValidReceipt(ocrText);
+          final nextStatus = isValid ? ProcessingStatus.ocrComplete : ProcessingStatus.skipped;
+
+          // 7. Save OCR Result & Status
           await db.update(
             'processed_images',
             {
               'ocr_text': ocrText,
-              'processing_status': ProcessingStatus.ocrComplete.name, 
+              'processing_status': nextStatus.name, 
             },
             where: 'id = ?',
             whereArgs: [id],
           );
           
-          // Trigger classification immediately
-          _classificationService.processQueue();
+          // Only auto-trigger classification if user enabled auto-processing (for now, disable auto-trigger)
+          // _classificationService.processQueue(); 
+
           
         } catch (e) {
            await db.update(

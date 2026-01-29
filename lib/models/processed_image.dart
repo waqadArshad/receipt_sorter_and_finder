@@ -28,6 +28,9 @@ class ProcessedImage {
   final DateTime? transactionDate;
   final double? amount;
   final String? merchantName;
+  final String? senderName;
+  final String? recipientName;
+  final String? transactionType;
   
   final DateTime processedAt;
   final bool isSynced;
@@ -47,6 +50,9 @@ class ProcessedImage {
     this.transactionDate,
     this.amount,
     this.merchantName,
+    this.senderName,
+    this.recipientName,
+    this.transactionType,
     required this.processedAt,
     this.isSynced = false,
     this.isDeleted = false,
@@ -67,6 +73,9 @@ class ProcessedImage {
       'transaction_date': transactionDate?.toIso8601String(),
       'amount': amount,
       'merchant_name': merchantName,
+      'sender_name': senderName,
+      'recipient_name': recipientName,
+      'transaction_type': transactionType,
       'processed_at': processedAt.toIso8601String(),
       'is_synced': isSynced ? 1 : 0,
       'is_deleted': isDeleted ? 1 : 0,
@@ -93,6 +102,9 @@ class ProcessedImage {
           : null,
       amount: map['amount'],
       merchantName: map['merchant_name'],
+      senderName: map['sender_name'],
+      recipientName: map['recipient_name'],
+      transactionType: map['transaction_type'],
       processedAt: DateTime.parse(map['processed_at']),
       isSynced: map['is_synced'] == 1,
       isDeleted: map['is_deleted'] == 1,

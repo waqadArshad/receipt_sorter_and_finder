@@ -21,9 +21,19 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDB,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Add new columns for transaction details
+      await db.execute('ALTER TABLE processed_images ADD COLUMN sender_name TEXT');
+      await db.execute('ALTER TABLE processed_images ADD COLUMN recipient_name TEXT');
+      await db.execute('ALTER TABLE processed_images ADD COLUMN transaction_type TEXT');
+    }
   }
 
   Future<void> _createDB(Database db, int version) async {
@@ -50,6 +60,9 @@ CREATE TABLE processed_images (
   transaction_date $textType,
   amount $realType,
   merchant_name $textType,
+  sender_name $textType,
+  recipient_name $textType,
+  transaction_type $textType,
   
   processed_at $textType,
   is_synced $boolType DEFAULT 0,
