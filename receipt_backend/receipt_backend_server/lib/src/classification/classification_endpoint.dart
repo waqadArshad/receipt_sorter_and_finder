@@ -43,6 +43,7 @@ class ClassificationEndpoint extends Endpoint {
                              "sender_name (string - who sent the money, null for purchases), "
                              "recipient_name (string - who received the money, null for purchases), "
                              "total_amount (number - always positive), "
+                             "currency (string - ISO 4217 code like USD, PKR, EUR, INR or symbol like \$, ₨, Rs, ₹, €), "
                              "transaction_type (string - 'credit' if user received money, 'debit' if user sent money, 'purchase' for retail, 'third_party' if neither), "
                              "transaction_date (ISO8601 string or null), "
                              "document_type (pos_receipt, digital_receipt, invoice, bank_statement, transfer_receipt, other), "
@@ -70,6 +71,7 @@ class ClassificationEndpoint extends Endpoint {
               senderName: extracted['sender_name'],
               recipientName: extracted['recipient_name'],
               totalAmount: (extracted['total_amount'] is num) ? (extracted['total_amount'] as num).toDouble() : null,
+              currency: extracted['currency'],
               transactionType: extracted['transaction_type'],
               transactionDate: DateTime.tryParse(extracted['transaction_date'] ?? '') ?? DateTime.now(),
               summary: 'LLM Extracted',

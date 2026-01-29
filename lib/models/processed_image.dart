@@ -27,6 +27,7 @@ class ProcessedImage {
   
   final DateTime? transactionDate;
   final double? amount;
+  final String? currency;
   final String? merchantName;
   final String? senderName;
   final String? recipientName;
@@ -49,6 +50,7 @@ class ProcessedImage {
     this.category,
     this.transactionDate,
     this.amount,
+    this.currency,
     this.merchantName,
     this.senderName,
     this.recipientName,
@@ -72,6 +74,7 @@ class ProcessedImage {
       'category': category,
       'transaction_date': transactionDate?.toIso8601String(),
       'amount': amount,
+      'currency': currency,
       'merchant_name': merchantName,
       'sender_name': senderName,
       'recipient_name': recipientName,
@@ -101,6 +104,7 @@ class ProcessedImage {
           ? DateTime.parse(map['transaction_date']) 
           : null,
       amount: map['amount'],
+      currency: map['currency'],
       merchantName: map['merchant_name'],
       senderName: map['sender_name'],
       recipientName: map['recipient_name'],

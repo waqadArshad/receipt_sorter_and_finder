@@ -69,6 +69,7 @@ class ClassificationService {
               'sender_name': result.senderName,
               'recipient_name': result.recipientName,
               'amount': result.totalAmount,
+              'currency': result.currency,
               'transaction_type': result.transactionType,
               'transaction_date': result.transactionDate?.toIso8601String(),
             },

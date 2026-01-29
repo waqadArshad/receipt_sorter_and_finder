@@ -95,7 +95,7 @@ class ImageDetailScreen extends StatelessWidget {
                                 processedData!.transactionType == 'credit' ? 'Received' : 
                                 processedData!.transactionType == 'debit' ? 'Sent' :
                                 processedData!.transactionType == 'third_party' ? 'Amount' : 'Amount',
-                                '\$${processedData!.amount!.toStringAsFixed(2)}'
+                                '${processedData!.currency ?? "\$"}${processedData!.amount!.toStringAsFixed(2)}'
                               ),
                             if (processedData?.transactionDate != null)
                               _buildDetailRow(Icons.calendar_today, 'Date', processedData!.transactionDate!.toString().split(' ')[0]),

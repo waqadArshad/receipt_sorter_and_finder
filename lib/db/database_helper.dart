@@ -21,7 +21,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -29,10 +29,22 @@ class DatabaseHelper {
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-      // Add new columns for transaction details
+      // Add new columns for transaction details (v1 → v2)
       await db.execute('ALTER TABLE processed_images ADD COLUMN sender_name TEXT');
       await db.execute('ALTER TABLE processed_images ADD COLUMN recipient_name TEXT');
+      await db.execute('ALTER TABLE processed_images ADD COLUMN currency TEXT');
       await db.execute('ALTER TABLE processed_images ADD COLUMN transaction_type TEXT');
+    }
+    
+    if (oldVersion < 3) {
+      // Add currency column if upgrading from v2 (v2 → v3)
+      // Check if column exists first to avoid errors
+      final tableInfo = await db.rawQuery('PRAGMA table_info(processed_images)');
+      final hasCurrency = tableInfo.any((col) => col['name'] == 'currency');
+      
+      if (!hasCurrency) {
+        await db.execute('ALTER TABLE processed_images ADD COLUMN currency TEXT');
+      }
     }
   }
 
@@ -59,6 +71,7 @@ CREATE TABLE processed_images (
   
   transaction_date $textType,
   amount $realType,
+  currency $textType,
   merchant_name $textType,
   sender_name $textType,
   recipient_name $textType,
