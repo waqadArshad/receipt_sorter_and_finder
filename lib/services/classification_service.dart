@@ -77,7 +77,8 @@ class ClassificationService {
       // 3. Call API
       try {
         final stopwatch = Stopwatch()..start();
-        final response = await ApiService().client.classification.classifyBatch(tasks);
+        final response = await ApiService().client.classification.classifyBatch(tasks)
+            .timeout(const Duration(seconds: 310));
         stopwatch.stop();
 
         debugPrint('[Classification] Backend responded in ${stopwatch.elapsedMilliseconds}ms. Results: ${response.results.length}');

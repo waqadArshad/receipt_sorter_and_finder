@@ -12,16 +12,20 @@ class ChatEndpoint extends Endpoint {
       // In a real implementation, we'd use LLM to generating search filters first
       final receipts = await Receipt.db.find(
         session,
-        limit: 500, // Increased to 500: Gemini Flash has a huge context window (1M tokens). 
+        limit: 200, // Increased to 500: Gemini Flash has a huge context window (1M tokens).
                    // We can feed it almost your entire history!
         orderBy: (t) => t.transactionDate,
         orderDescending: true,
       );
 
       // 2. Prepare context for LLM
-      final contextData = receipts.map((r) => 
-        "- ${r.transactionDate.toString().split(' ')[0]}: ${r.merchantName} (${r.category}) - ${r.currency} ${r.totalAmount}"
-      ).join('\n');
+      final contextData = receipts.map((r) {
+        String details = "${r.merchantName}";
+        if (r.senderName != null || r.recipientName != null) {
+          details += " | From: ${r.senderName ?? 'N/A'} -> To: ${r.recipientName ?? 'N/A'}";
+        }
+        return "- ${r.transactionDate.toString().split(' ')[0]} [${r.transactionType ?? 'transaction'}]: $details (${r.category}) - ${r.currency} ${r.totalAmount}";
+      }).join('\n');
 
       final systemPrompt = """
 You are a helpful receipt assistant. 
@@ -48,12 +52,13 @@ $contextData
         },
         body: jsonEncode({
           'model': 'deepseek/deepseek-r1-0528:free', // User preferred free model
+          'max_tokens': 5000,
           'messages': [
             {'role': 'system', 'content': systemPrompt},
             {'role': 'user', 'content': question},
           ],
         }),
-      );
+      ).timeout(Duration(seconds: 300));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

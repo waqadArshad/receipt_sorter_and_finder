@@ -22,6 +22,7 @@ class ApiService {
     _client = Client(
       host,
       authenticationKeyManager: FlutterAuthenticationKeyManager(),
+      connectionTimeout: const Duration(minutes: 5),
     )..connectivityMonitor = FlutterConnectivityMonitor();
   }
 

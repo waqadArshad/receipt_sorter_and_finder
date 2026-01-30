@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -26,6 +27,7 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       // Call Real API
       final response = await ApiService().client.chat.ask(text);
+          // .timeout(const Duration(seconds: 399));
       
       setState(() {
         _messages.add(Message(text: response, isUser: false));
@@ -71,7 +73,14 @@ class _ChatScreenState extends State<ChatScreen> {
                       color: msg.isUser ? Theme.of(context).primaryColor : Colors.grey[800],
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text(msg.text, style: const TextStyle(color: Colors.white)),
+                    child: MarkdownBody(
+                      data: msg.text,
+                      styleSheet: MarkdownStyleSheet(
+                        p: const TextStyle(color: Colors.white, fontSize: 16),
+                        strong: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        listBullet: const TextStyle(color: Colors.white),
+                      ),
+                    ),
                   ),
                 );
               },
