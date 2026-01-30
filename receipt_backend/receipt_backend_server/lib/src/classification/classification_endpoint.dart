@@ -9,8 +9,12 @@ class ClassificationEndpoint extends Endpoint {
     session.log('Received batch of ${tasks.length} tasks for classification');
 
     // 1. Get API Key from config
-    final apiKey = session.serverpod.getPassword('openrouterApiKey');
-    if (apiKey == null || apiKey.isEmpty || apiKey == '\${OPENROUTER_KEY}') {
+    // Ensure this matches the key in config/passwords.yaml
+    final apiKey = session.serverpod.getPassword('OPENROUTER_KEY');
+    
+    session.log('DEBUG: API Key Loaded: ${apiKey != null && apiKey.isNotEmpty ? "YES (${apiKey.substring(0, 5)}...)" : "NO"}');
+    
+    if (apiKey == null || apiKey.isEmpty || apiKey.contains('OPENROUTER_KEY')) {
        session.log('OpenRouter API Key not set! Falling back to mock.', level: LogLevel.warning);
        return _mockClassify(tasks);
     }
@@ -19,9 +23,14 @@ class ClassificationEndpoint extends Endpoint {
     final client = http.Client();
 
     try {
-      for (var task in tasks) {
+      session.log('DEBUG: Starting LLM Loop with model: arcee-ai/trinity-large-preview:free');
+      
+      // Process in parallel to avoid timeout (wait for all to finish)
+      // OpenRouter can handle concurrent requests
+      await Future.wait(tasks.map((task) async {
         try {
           // Prepare Prompt
+          // ... (same prompt building)
           final prompt = _buildPrompt(task.ocrText);
           
           final response = await client.post(
@@ -34,7 +43,7 @@ class ClassificationEndpoint extends Endpoint {
             },
             body: jsonEncode({
               // "model": "google/gemini-2.0-flash-lite-preview-02-05:free", // cost-effective
-              "model": "google/gemini-2.0-flash-lite-preview-02-05:free",
+              "model": "arcee-ai/trinity-large-preview:free", // Latest experimental free
               "messages": [
                 {
                   "role": "system", 
@@ -52,7 +61,7 @@ class ClassificationEndpoint extends Endpoint {
                 {"role": "user", "content": "Extract data from this text:\n${task.ocrText}"}
               ]
             }),
-          );
+          ).timeout(Duration(seconds: 300));
 
           if (response.statusCode == 200) {
             final data = jsonDecode(response.body);
@@ -62,7 +71,7 @@ class ClassificationEndpoint extends Endpoint {
             final cleanJson = content.replaceAll('```json', '').replaceAll('```', '').trim();
             final extracted = jsonDecode(cleanJson);
             
-            results.add(ClassificationResult(
+            final result = ClassificationResult(
               hash: task.hash,
               documentType: extracted['document_type'] ?? 'other',
               category: extracted['category'] ?? 'uncategorized',
@@ -75,7 +84,34 @@ class ClassificationEndpoint extends Endpoint {
               transactionType: extracted['transaction_type'],
               transactionDate: DateTime.tryParse(extracted['transaction_date'] ?? '') ?? DateTime.now(),
               summary: 'LLM Extracted',
-            ));
+            );
+            
+            // Thread-safe add
+            results.add(result);
+
+            // SAVE TO DB (Serverpod Requirement)
+            try {
+              final receiptEntry = Receipt(
+                metadataHash: result.hash,
+                filePath: '', // Client handles file upload separately if needed
+                ocrText: task.ocrText,
+                documentType: result.documentType,
+                category: result.category,
+                merchantName: result.merchantName,
+                senderName: result.senderName,
+                recipientName: result.recipientName,
+                totalAmount: result.totalAmount,
+                currency: result.currency,
+                transactionType: result.transactionType,
+                transactionDate: result.transactionDate,
+                processedAt: DateTime.now(),
+                processingStatus: 'completed',
+              );
+              await Receipt.db.insertRow(session, receiptEntry);
+              session.log('Persisted receipt to Serverpod DB: ${result.hash}');
+            } catch (dbError) {
+              session.log('Failed to persist receipt: $dbError', level: LogLevel.warning);
+            }
           } else {
              session.log('OpenRouter API Error: ${response.statusCode} - ${response.body}', level: LogLevel.error);
              // Fallback to basic
@@ -85,7 +121,8 @@ class ClassificationEndpoint extends Endpoint {
           session.log('Error processing task: $e', level: LogLevel.error);
           results.add(_mockSingle(task));
         }
-      }
+      })); // End Future.wait
+
     } finally {
       client.close();
     }

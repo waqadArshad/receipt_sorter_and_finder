@@ -20,12 +20,15 @@ import 'classification/batch_classification_response.dart' as _i5;
 import 'classification/classification_result.dart' as _i6;
 import 'classification/classification_task.dart' as _i7;
 import 'greetings/greeting.dart' as _i8;
+import 'receipt.dart' as _i9;
 import 'package:receipt_backend_server/src/generated/classification/classification_task.dart'
-    as _i9;
+    as _i10;
+import 'package:receipt_backend_server/src/generated/receipt.dart' as _i11;
 export 'classification/batch_classification_response.dart';
 export 'classification/classification_result.dart';
 export 'classification/classification_task.dart';
 export 'greetings/greeting.dart';
+export 'receipt.dart';
 
 class Protocol extends _i1.SerializationManagerServer {
   Protocol._();
@@ -35,6 +38,147 @@ class Protocol extends _i1.SerializationManagerServer {
   static final Protocol _instance = Protocol._();
 
   static final List<_i2.TableDefinition> targetTableDefinitions = [
+    _i2.TableDefinition(
+      name: 'receipts',
+      dartName: 'Receipt',
+      schema: 'public',
+      module: 'receipt_backend',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'nextval(\'receipts_id_seq\'::regclass)',
+        ),
+        _i2.ColumnDefinition(
+          name: 'userId',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: true,
+          dartType: 'int?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'filePath',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'metadataHash',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'assetId',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'ocrText',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'documentType',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'category',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'merchantName',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'senderName',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'recipientName',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'totalAmount',
+          columnType: _i2.ColumnType.doublePrecision,
+          isNullable: true,
+          dartType: 'double?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'currency',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'transactionType',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'transactionDate',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: true,
+          dartType: 'DateTime?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'processedAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+        _i2.ColumnDefinition(
+          name: 'processingStatus',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'receipts_pkey',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'id',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: true,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'metadataHash_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'metadataHash',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
     ..._i3.Protocol.targetTableDefinitions,
     ..._i4.Protocol.targetTableDefinitions,
     ..._i2.Protocol.targetTableDefinitions,
@@ -79,6 +223,9 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i8.Greeting) {
       return _i8.Greeting.fromJson(data) as T;
     }
+    if (t == _i9.Receipt) {
+      return _i9.Receipt.fromJson(data) as T;
+    }
     if (t == _i1.getType<_i5.BatchClassificationResponse?>()) {
       return (data != null
               ? _i5.BatchClassificationResponse.fromJson(data)
@@ -95,16 +242,23 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i1.getType<_i8.Greeting?>()) {
       return (data != null ? _i8.Greeting.fromJson(data) : null) as T;
     }
+    if (t == _i1.getType<_i9.Receipt?>()) {
+      return (data != null ? _i9.Receipt.fromJson(data) : null) as T;
+    }
     if (t == List<_i6.ClassificationResult>) {
       return (data as List)
               .map((e) => deserialize<_i6.ClassificationResult>(e))
               .toList()
           as T;
     }
-    if (t == List<_i9.ClassificationTask>) {
+    if (t == List<_i10.ClassificationTask>) {
       return (data as List)
-              .map((e) => deserialize<_i9.ClassificationTask>(e))
+              .map((e) => deserialize<_i10.ClassificationTask>(e))
               .toList()
+          as T;
+    }
+    if (t == List<_i11.Receipt>) {
+      return (data as List).map((e) => deserialize<_i11.Receipt>(e)).toList()
           as T;
     }
     try {
@@ -125,6 +279,7 @@ class Protocol extends _i1.SerializationManagerServer {
       _i6.ClassificationResult => 'ClassificationResult',
       _i7.ClassificationTask => 'ClassificationTask',
       _i8.Greeting => 'Greeting',
+      _i9.Receipt => 'Receipt',
       _ => null,
     };
   }
@@ -150,6 +305,8 @@ class Protocol extends _i1.SerializationManagerServer {
         return 'ClassificationTask';
       case _i8.Greeting():
         return 'Greeting';
+      case _i9.Receipt():
+        return 'Receipt';
     }
     className = _i2.Protocol().getClassNameForObject(data);
     if (className != null) {
@@ -183,6 +340,9 @@ class Protocol extends _i1.SerializationManagerServer {
     }
     if (dataClassName == 'Greeting') {
       return deserialize<_i8.Greeting>(data['data']);
+    }
+    if (dataClassName == 'Receipt') {
+      return deserialize<_i9.Receipt>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
@@ -218,6 +378,10 @@ class Protocol extends _i1.SerializationManagerServer {
       if (table != null) {
         return table;
       }
+    }
+    switch (t) {
+      case _i9.Receipt:
+        return _i9.Receipt.t;
     }
     return null;
   }

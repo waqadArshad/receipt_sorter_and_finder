@@ -20,6 +20,7 @@ class _FilterScreenState extends State<FilterScreen> {
   List<String> _availableMerchants = [];
   final List<String> _availableTypes = [
     'pos_receipt',
+    'transfer_receipt', // Added missing type!
     'digital_receipt',
     'invoice',
     'bank_statement',

@@ -14,13 +14,16 @@ import 'package:serverpod/serverpod.dart' as _i1;
 import '../auth/email_idp_endpoint.dart' as _i2;
 import '../auth/jwt_refresh_endpoint.dart' as _i3;
 import '../classification/classification_endpoint.dart' as _i4;
-import '../greetings/greeting_endpoint.dart' as _i5;
+import '../endpoints/chat_endpoint.dart' as _i5;
+import '../endpoints/receipt_endpoint.dart' as _i6;
+import '../greetings/greeting_endpoint.dart' as _i7;
 import 'package:receipt_backend_server/src/generated/classification/classification_task.dart'
-    as _i6;
-import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
-    as _i7;
-import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _i8;
+import 'package:receipt_backend_server/src/generated/receipt.dart' as _i9;
+import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
+    as _i10;
+import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
+    as _i11;
 
 class Endpoints extends _i1.EndpointDispatch {
   @override
@@ -44,7 +47,19 @@ class Endpoints extends _i1.EndpointDispatch {
           'classification',
           null,
         ),
-      'greeting': _i5.GreetingEndpoint()
+      'chat': _i5.ChatEndpoint()
+        ..initialize(
+          server,
+          'chat',
+          null,
+        ),
+      'receipt': _i6.ReceiptEndpoint()
+        ..initialize(
+          server,
+          'receipt',
+          null,
+        ),
+      'greeting': _i7.GreetingEndpoint()
         ..initialize(
           server,
           'greeting',
@@ -254,7 +269,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'tasks': _i1.ParameterDescription(
               name: 'tasks',
-              type: _i1.getType<List<_i6.ClassificationTask>>(),
+              type: _i1.getType<List<_i8.ClassificationTask>>(),
               nullable: false,
             ),
           },
@@ -268,6 +283,180 @@ class Endpoints extends _i1.EndpointDispatch {
                         session,
                         params['tasks'],
                       ),
+        ),
+      },
+    );
+    connectors['chat'] = _i1.EndpointConnector(
+      name: 'chat',
+      endpoint: endpoints['chat']!,
+      methodConnectors: {
+        'ask': _i1.MethodConnector(
+          name: 'ask',
+          params: {
+            'question': _i1.ParameterDescription(
+              name: 'question',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['chat'] as _i5.ChatEndpoint).ask(
+                session,
+                params['question'],
+              ),
+        ),
+      },
+    );
+    connectors['receipt'] = _i1.EndpointConnector(
+      name: 'receipt',
+      endpoint: endpoints['receipt']!,
+      methodConnectors: {
+        'storeReceipt': _i1.MethodConnector(
+          name: 'storeReceipt',
+          params: {
+            'receipt': _i1.ParameterDescription(
+              name: 'receipt',
+              type: _i1.getType<_i9.Receipt>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['receipt'] as _i6.ReceiptEndpoint).storeReceipt(
+                    session,
+                    params['receipt'],
+                  ),
+        ),
+        'storeReceipts': _i1.MethodConnector(
+          name: 'storeReceipts',
+          params: {
+            'receipts': _i1.ParameterDescription(
+              name: 'receipts',
+              type: _i1.getType<List<_i9.Receipt>>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['receipt'] as _i6.ReceiptEndpoint).storeReceipts(
+                    session,
+                    params['receipts'],
+                  ),
+        ),
+        'getUserReceipts': _i1.MethodConnector(
+          name: 'getUserReceipts',
+          params: {
+            'userId': _i1.ParameterDescription(
+              name: 'userId',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+            'limit': _i1.ParameterDescription(
+              name: 'limit',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'offset': _i1.ParameterDescription(
+              name: 'offset',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['receipt'] as _i6.ReceiptEndpoint).getUserReceipts(
+                    session,
+                    userId: params['userId'],
+                    limit: params['limit'],
+                    offset: params['offset'],
+                  ),
+        ),
+        'searchReceipts': _i1.MethodConnector(
+          name: 'searchReceipts',
+          params: {
+            'query': _i1.ParameterDescription(
+              name: 'query',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'userId': _i1.ParameterDescription(
+              name: 'userId',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['receipt'] as _i6.ReceiptEndpoint).searchReceipts(
+                    session,
+                    params['query'],
+                    userId: params['userId'],
+                  ),
+        ),
+        'getReceiptByHash': _i1.MethodConnector(
+          name: 'getReceiptByHash',
+          params: {
+            'metadataHash': _i1.ParameterDescription(
+              name: 'metadataHash',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['receipt'] as _i6.ReceiptEndpoint)
+                  .getReceiptByHash(
+                    session,
+                    params['metadataHash'],
+                  ),
+        ),
+        'getReceiptsByDateRange': _i1.MethodConnector(
+          name: 'getReceiptsByDateRange',
+          params: {
+            'startDate': _i1.ParameterDescription(
+              name: 'startDate',
+              type: _i1.getType<DateTime>(),
+              nullable: false,
+            ),
+            'endDate': _i1.ParameterDescription(
+              name: 'endDate',
+              type: _i1.getType<DateTime>(),
+              nullable: false,
+            ),
+            'userId': _i1.ParameterDescription(
+              name: 'userId',
+              type: _i1.getType<int?>(),
+              nullable: true,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['receipt'] as _i6.ReceiptEndpoint)
+                  .getReceiptsByDateRange(
+                    session,
+                    params['startDate'],
+                    params['endDate'],
+                    userId: params['userId'],
+                  ),
         ),
       },
     );
@@ -288,16 +477,16 @@ class Endpoints extends _i1.EndpointDispatch {
               (
                 _i1.Session session,
                 Map<String, dynamic> params,
-              ) async => (endpoints['greeting'] as _i5.GreetingEndpoint).hello(
+              ) async => (endpoints['greeting'] as _i7.GreetingEndpoint).hello(
                 session,
                 params['name'],
               ),
         ),
       },
     );
-    modules['serverpod_auth_idp'] = _i7.Endpoints()
+    modules['serverpod_auth_idp'] = _i10.Endpoints()
       ..initializeEndpoints(server);
-    modules['serverpod_auth_core'] = _i8.Endpoints()
+    modules['serverpod_auth_core'] = _i11.Endpoints()
       ..initializeEndpoints(server);
   }
 }

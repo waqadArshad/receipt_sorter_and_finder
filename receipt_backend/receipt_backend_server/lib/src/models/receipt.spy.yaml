@@ -1,0 +1,29 @@
+class: Receipt
+table: receipts
+fields:
+  userId: int?
+  filePath: String
+  metadataHash: String
+  assetId: String?
+  
+  # OCR Data
+  ocrText: String?
+  
+  # Classification Results (from AI)
+  documentType: String?
+  category: String?
+  merchantName: String?
+  senderName: String?
+  recipientName: String?
+  totalAmount: double?
+  currency: String?
+  transactionType: String?
+  transactionDate: DateTime?
+  
+  # Metadata
+  processedAt: DateTime
+  processingStatus: String
+
+indexes:
+  metadataHash_idx:
+    fields: metadataHash

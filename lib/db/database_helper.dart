@@ -140,8 +140,16 @@ CREATE TABLE processed_images (
     db.close();
   }
 
-  Future<void> clearAllData() async {
+  Future<int> clearAllData() async {
     final db = await instance.database;
-    await db.delete('processed_images');
+    try {
+      final count = await db.delete('processed_images');
+      // Optional: Reset AutoIncrement
+      await db.delete('sqlite_sequence', where: 'name = ?', whereArgs: ['processed_images']);
+      return count;
+    } catch (e) {
+      print('Error clearing data: $e');
+      return -1;
+    }
   }
 }

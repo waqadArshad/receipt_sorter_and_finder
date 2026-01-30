@@ -10,5 +10,14 @@ jwtRefresh:
   - refreshAccessToken:
 classification:
   - classifyBatch:
+chat:
+  - ask:
+receipt:
+  - storeReceipt:
+  - storeReceipts:
+  - getUserReceipts:
+  - searchReceipts:
+  - getReceiptByHash:
+  - getReceiptsByDateRange:
 greeting:
   - hello:

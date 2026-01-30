@@ -20,8 +20,9 @@ import 'package:receipt_backend_server/src/generated/classification/batch_classi
     as _i5;
 import 'package:receipt_backend_server/src/generated/classification/classification_task.dart'
     as _i6;
+import 'package:receipt_backend_server/src/generated/receipt.dart' as _i7;
 import 'package:receipt_backend_server/src/generated/greetings/greeting.dart'
-    as _i7;
+    as _i8;
 import 'package:receipt_backend_server/src/generated/protocol.dart';
 import 'package:receipt_backend_server/src/generated/endpoints.dart';
 export 'package:serverpod_test/serverpod_test_public_exports.dart';
@@ -135,6 +136,10 @@ class TestEndpoints {
 
   late final _ClassificationEndpoint classification;
 
+  late final _ChatEndpoint chat;
+
+  late final _ReceiptEndpoint receipt;
+
   late final _GreetingEndpoint greeting;
 }
 
@@ -154,6 +159,14 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     classification = _ClassificationEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    chat = _ChatEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    receipt = _ReceiptEndpoint(
       endpoints,
       serializationManager,
     );
@@ -496,6 +509,261 @@ class _ClassificationEndpoint {
   }
 }
 
+class _ChatEndpoint {
+  _ChatEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
+  _i3.Future<String> ask(
+    _i1.TestSessionBuilder sessionBuilder,
+    String question,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'chat',
+            method: 'ask',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'chat',
+          methodName: 'ask',
+          parameters: _i1.testObjectToJson({'question': question}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<String>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _ReceiptEndpoint {
+  _ReceiptEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
+  _i3.Future<_i7.Receipt> storeReceipt(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i7.Receipt receipt,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'receipt',
+            method: 'storeReceipt',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'receipt',
+          methodName: 'storeReceipt',
+          parameters: _i1.testObjectToJson({'receipt': receipt}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<_i7.Receipt>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<List<_i7.Receipt>> storeReceipts(
+    _i1.TestSessionBuilder sessionBuilder,
+    List<_i7.Receipt> receipts,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'receipt',
+            method: 'storeReceipts',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'receipt',
+          methodName: 'storeReceipts',
+          parameters: _i1.testObjectToJson({'receipts': receipts}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<List<_i7.Receipt>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<List<_i7.Receipt>> getUserReceipts(
+    _i1.TestSessionBuilder sessionBuilder, {
+    int? userId,
+    required int limit,
+    required int offset,
+  }) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'receipt',
+            method: 'getUserReceipts',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'receipt',
+          methodName: 'getUserReceipts',
+          parameters: _i1.testObjectToJson({
+            'userId': userId,
+            'limit': limit,
+            'offset': offset,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<List<_i7.Receipt>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<List<_i7.Receipt>> searchReceipts(
+    _i1.TestSessionBuilder sessionBuilder,
+    String query, {
+    int? userId,
+  }) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'receipt',
+            method: 'searchReceipts',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'receipt',
+          methodName: 'searchReceipts',
+          parameters: _i1.testObjectToJson({
+            'query': query,
+            'userId': userId,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<List<_i7.Receipt>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<_i7.Receipt?> getReceiptByHash(
+    _i1.TestSessionBuilder sessionBuilder,
+    String metadataHash,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'receipt',
+            method: 'getReceiptByHash',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'receipt',
+          methodName: 'getReceiptByHash',
+          parameters: _i1.testObjectToJson({'metadataHash': metadataHash}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<_i7.Receipt?>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<List<_i7.Receipt>> getReceiptsByDateRange(
+    _i1.TestSessionBuilder sessionBuilder,
+    DateTime startDate,
+    DateTime endDate, {
+    int? userId,
+  }) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'receipt',
+            method: 'getReceiptsByDateRange',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'receipt',
+          methodName: 'getReceiptsByDateRange',
+          parameters: _i1.testObjectToJson({
+            'startDate': startDate,
+            'endDate': endDate,
+            'userId': userId,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<List<_i7.Receipt>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
 class _GreetingEndpoint {
   _GreetingEndpoint(
     this._endpointDispatch,
@@ -506,7 +774,7 @@ class _GreetingEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i3.Future<_i7.Greeting> hello(
+  _i3.Future<_i8.Greeting> hello(
     _i1.TestSessionBuilder sessionBuilder,
     String name,
   ) async {
@@ -529,7 +797,7 @@ class _GreetingEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i7.Greeting>);
+                as _i3.Future<_i8.Greeting>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

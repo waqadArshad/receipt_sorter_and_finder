@@ -9,6 +9,7 @@ import '../models/filter_criteria.dart';
 import 'search_screen.dart';
 import 'image_detail_screen.dart';
 import 'filter_screen.dart';
+import 'chat_screen.dart';
 
 class GalleryScreen extends StatefulWidget {
   const GalleryScreen({super.key});
@@ -20,6 +21,7 @@ class GalleryScreen extends StatefulWidget {
 class _GalleryScreenState extends State<GalleryScreen> {
   List<AssetEntity> _assets = [];
   bool _isLoading = true;
+  bool _isProcessingQueue = false;
   PermissionState _permissionState = PermissionState.notDetermined;
   final _pipeline = ProcessingPipeline();
 
@@ -60,6 +62,16 @@ class _GalleryScreenState extends State<GalleryScreen> {
 
     if (ps.isAuth) {
       await _loadAssets();
+      
+      // BACKGROUND SYNC: Try to fetch latest data from server to recover "Lost/Failed" items
+      // Don't await this to keep UI snappy
+      ClassificationService().syncWithServer().then((count) {
+        if (count > 0 && mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Synced $count items from Cloud')));
+           _loadTabAssets(); // Refresh UI after sync
+        }
+      });
+      
     } else {
       setState(() {
         _isLoading = false;
@@ -107,7 +119,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
     if (_isFiltered) {
       // Load from DB based on filters
       final db = DatabaseHelper.instance;
+      debugPrint('Filtering with criteria: types=${_filterCriteria.documentTypes}, merchants=${_filterCriteria.merchants}');
       final results = await db.getFilteredImages(_filterCriteria);
+      debugPrint('Filter returned ${results.length} rows');
 
       // We need to map these back to AssetEntities if possible,
       // but wait, AssetEntity is valid only if the image is in gallery.
@@ -157,22 +171,46 @@ class _GalleryScreenState extends State<GalleryScreen> {
   }
 
   Future<void> _loadTabAssets() async {
-    final processed = await _loadAssetsByStatus([ProcessingStatus.completed]);
-    final pending = await _loadAssetsByStatus([
-      ProcessingStatus.pending,
-      ProcessingStatus.hashing,
-      ProcessingStatus.ocrInProgress,
-      ProcessingStatus.ocrComplete,
-      ProcessingStatus.classificationQueued,
-      ProcessingStatus.classificationInProgress,
-    ]);
-    final skipped = await _loadAssetsByStatus([ProcessingStatus.skipped, ProcessingStatus.failed]);
+    if (_isFiltered) {
+      // If filtering is active, queries are based on metadata (Merchant, Date, etc.)
+      // This primarily applies to Completed receipts.
+      final db = DatabaseHelper.instance;
+      final results = await db.getFilteredImages(_filterCriteria);
+      
+      List<AssetEntity> validAssets = [];
+      for (var row in results) {
+        final pid = row['asset_id'] as String?;
+        if (pid != null) {
+          final asset = await AssetEntity.fromId(pid);
+          if (asset != null) validAssets.add(asset);
+        }
+      }
 
-    setState(() {
-      _processedAssets = processed;
-      _pendingAssets = pending;
-      _skippedAssets = skipped;
-    });
+      setState(() {
+        _processedAssets = validAssets;
+        // Filters (Merchant/Amount) don't apply to pending items usually
+        _pendingAssets = []; 
+        _skippedAssets = [];
+      });
+    } else {
+      // Normal View - Split by Status
+      final processed = await _loadAssetsByStatus([ProcessingStatus.completed]);
+      final pending = await _loadAssetsByStatus([
+        ProcessingStatus.pending,
+        ProcessingStatus.hashing,
+        ProcessingStatus.ocrInProgress,
+        ProcessingStatus.ocrComplete,
+        ProcessingStatus.classificationQueued,
+        ProcessingStatus.classificationInProgress,
+      ]);
+      final skipped = await _loadAssetsByStatus([ProcessingStatus.skipped, ProcessingStatus.failed]);
+
+      setState(() {
+        _processedAssets = processed;
+        _pendingAssets = pending;
+        _skippedAssets = skipped;
+      });
+    }
   }
 
   @override
@@ -202,7 +240,13 @@ class _GalleryScreenState extends State<GalleryScreen> {
               onPressed: _openFilters,
             ),
             IconButton(
-              icon: const Icon(Icons.search),
+            icon: const Icon(Icons.chat_bubble_outline),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatScreen()));
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.search),
               onPressed: () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchScreen()));
               },
@@ -225,14 +269,28 @@ class _GalleryScreenState extends State<GalleryScreen> {
                  );
                  
                  if (confirm == true) {
-                   await DatabaseHelper.instance.clearAllData();
-                   setState(() {
-                     _assets = [];
-                     _processedAssets = [];
-                     _pendingAssets = [];
-                     _skippedAssets = [];
-                   });
-                   await _requestPermissionAndLoad(); // Reload and re-scan
+                   // Force stop UI processing visual
+                   setState(() => _isProcessingQueue = false); 
+                   
+                   final count = await DatabaseHelper.instance.clearAllData();
+                   
+                   if (context.mounted) {
+                     ScaffoldMessenger.of(context).showSnackBar(
+                       SnackBar(content: Text('Deleted $count records. Rescanning...')),
+                     );
+                     
+                     setState(() {
+                       _assets = [];
+                       _processedAssets = [];
+                       _pendingAssets = [];
+                       _skippedAssets = [];
+                     });
+                     
+                     // Small delay to ensure DB transaction commits
+                     await Future.delayed(const Duration(milliseconds: 500));
+                     
+                     await _requestPermissionAndLoad(); 
+                   }
                  }
               }
             ),
@@ -282,7 +340,53 @@ class _GalleryScreenState extends State<GalleryScreen> {
                   // Tab 4: Trash/Skipped
                   _skippedAssets.isEmpty
                     ? const Center(child: Text('No ignored items'))
-                    : _buildGrid(_skippedAssets),
+                    : Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: ElevatedButton.icon(
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Retry Failed/Skipped Items'),
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                              onPressed: () async {
+                                final db = await DatabaseHelper.instance.database;
+                                
+                                // 1. Only retry FAILED items (Network/Timeout errors)
+                                // Do NOT retry 'skipped' items (Invalid/No Text) because they are legitimate trash.
+                                await db.update(
+                                  'processed_images',
+                                  {'processing_status': 'ocrComplete'}, 
+                                  where: "processing_status = 'failed'",
+                                );
+
+                                setState(() {
+                                  _skippedAssets = [];
+                                });
+                                
+                                // 2. Trigger Sync to see if Server already has them
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Retrying failed items... Checking Cloud first...')),
+                                );
+                                
+                                final synced = await ClassificationService().syncWithServer();
+                                
+                                await _requestPermissionAndLoad();
+                                
+                                if (synced > 0) {
+                                   ScaffoldMessenger.of(context).showSnackBar(
+                                     SnackBar(content: Text('Recovered $synced items from Cloud! Rest queued for AI.')),
+                                   );
+                                } else {
+                                   ScaffoldMessenger.of(context).showSnackBar(
+                                     const SnackBar(content: Text('Items moved to Pending queue')),
+                                   );
+                                }
+                              },
+                            ),
+                          ),
+                          Expanded(child: _buildGrid(_skippedAssets)),
+                        ],
+                      ),
                 ],
               ),
             ),
@@ -290,45 +394,55 @@ class _GalleryScreenState extends State<GalleryScreen> {
         ),
         floatingActionButton: _pendingAssets.isNotEmpty
           ? FloatingActionButton.extended(
-              onPressed: () async {
+              onPressed: _isProcessingQueue ? null : () async {
                 // Show confirmation dialog
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
                     title: const Text('Process with AI'),
-                    content: Text('Send up to 50 validated receipts to AI for classification?\n\nThis will use API credits.'),
+                    content: const Text('Send up to 50 validated receipts to AI for classification?\n\nThis will use API credits.'),
                     actions: [
+                      TextButton(child: const Text('Cancel'), onPressed: () => Navigator.pop(context, false)),
                       TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Cancel'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        child: const Text('Process'),
+                        child: const Text('Start Processing'), 
+                        onPressed: () => Navigator.pop(context, true)
                       ),
                     ],
                   ),
                 );
 
                 if (confirm == true) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Processing queue...')),
-                  );
-                  
-                  await ClassificationService().processQueue();
-                  
-                  // Refresh tabs
-                  await _loadTabAssets();
-                  
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Processing complete!')),
-                    );
+                  setState(() => _isProcessingQueue = true);
+                  try {
+                    final processedCount = await ClassificationService().processQueue();
+                    if (mounted) {
+                      if (processedCount > 0) {
+                         ScaffoldMessenger.of(context).showSnackBar(
+                           SnackBar(content: Text('Successfully processed $processedCount receipts!')),
+                         );
+                      } else {
+                         ScaffoldMessenger.of(context).showSnackBar(
+                           const SnackBar(content: Text('No valid items found to process.')),
+                         );
+                      }
+                      // Refresh lists to move items from Pending to Receipts
+                      await _loadTabAssets();
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red),
+                      );
+                    }
+                  } finally {
+                    if (mounted) setState(() => _isProcessingQueue = false);
                   }
                 }
               },
-              icon: const Icon(Icons.auto_awesome),
-              label: const Text('Process Queue'),
+              label: _isProcessingQueue 
+                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('Process AI Queue'),
+              icon: _isProcessingQueue ? null : const Icon(Icons.auto_awesome),
               backgroundColor: Colors.purple,
             )
           : null,
@@ -393,6 +507,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
         _filterCriteria = result;
       });
       _loadAssets();
+      _loadTabAssets(); // Refresh Receipts tab too!
     }
   }
 }

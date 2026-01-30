@@ -20,9 +20,10 @@ import 'package:receipt_backend_client/src/protocol/classification/batch_classif
     as _i5;
 import 'package:receipt_backend_client/src/protocol/classification/classification_task.dart'
     as _i6;
+import 'package:receipt_backend_client/src/protocol/receipt.dart' as _i7;
 import 'package:receipt_backend_client/src/protocol/greetings/greeting.dart'
-    as _i7;
-import 'protocol.dart' as _i8;
+    as _i8;
+import 'protocol.dart' as _i9;
 
 /// By extending [EmailIdpBaseEndpoint], the email identity provider endpoints
 /// are made available on the server and enable the corresponding sign-in widget
@@ -254,6 +255,95 @@ class EndpointClassification extends _i2.EndpointRef {
   );
 }
 
+/// {@category Endpoint}
+class EndpointChat extends _i2.EndpointRef {
+  EndpointChat(_i2.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'chat';
+
+  _i3.Future<String> ask(String question) => caller.callServerEndpoint<String>(
+    'chat',
+    'ask',
+    {'question': question},
+  );
+}
+
+/// {@category Endpoint}
+class EndpointReceipt extends _i2.EndpointRef {
+  EndpointReceipt(_i2.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'receipt';
+
+  /// Store a receipt after classification
+  _i3.Future<_i7.Receipt> storeReceipt(_i7.Receipt receipt) =>
+      caller.callServerEndpoint<_i7.Receipt>(
+        'receipt',
+        'storeReceipt',
+        {'receipt': receipt},
+      );
+
+  /// Batch store multiple receipts
+  _i3.Future<List<_i7.Receipt>> storeReceipts(List<_i7.Receipt> receipts) =>
+      caller.callServerEndpoint<List<_i7.Receipt>>(
+        'receipt',
+        'storeReceipts',
+        {'receipts': receipts},
+      );
+
+  /// Get all receipts for a user
+  _i3.Future<List<_i7.Receipt>> getUserReceipts({
+    int? userId,
+    required int limit,
+    required int offset,
+  }) => caller.callServerEndpoint<List<_i7.Receipt>>(
+    'receipt',
+    'getUserReceipts',
+    {
+      'userId': userId,
+      'limit': limit,
+      'offset': offset,
+    },
+  );
+
+  /// Search receipts by text
+  _i3.Future<List<_i7.Receipt>> searchReceipts(
+    String query, {
+    int? userId,
+  }) => caller.callServerEndpoint<List<_i7.Receipt>>(
+    'receipt',
+    'searchReceipts',
+    {
+      'query': query,
+      'userId': userId,
+    },
+  );
+
+  /// Get receipt by hash (for deduplication)
+  _i3.Future<_i7.Receipt?> getReceiptByHash(String metadataHash) =>
+      caller.callServerEndpoint<_i7.Receipt?>(
+        'receipt',
+        'getReceiptByHash',
+        {'metadataHash': metadataHash},
+      );
+
+  /// Get receipts by date range
+  _i3.Future<List<_i7.Receipt>> getReceiptsByDateRange(
+    DateTime startDate,
+    DateTime endDate, {
+    int? userId,
+  }) => caller.callServerEndpoint<List<_i7.Receipt>>(
+    'receipt',
+    'getReceiptsByDateRange',
+    {
+      'startDate': startDate,
+      'endDate': endDate,
+      'userId': userId,
+    },
+  );
+}
+
 /// This is an example endpoint that returns a greeting message through
 /// its [hello] method.
 /// {@category Endpoint}
@@ -264,8 +354,8 @@ class EndpointGreeting extends _i2.EndpointRef {
   String get name => 'greeting';
 
   /// Returns a personalized greeting message: "Hello {name}".
-  _i3.Future<_i7.Greeting> hello(String name) =>
-      caller.callServerEndpoint<_i7.Greeting>(
+  _i3.Future<_i8.Greeting> hello(String name) =>
+      caller.callServerEndpoint<_i8.Greeting>(
         'greeting',
         'hello',
         {'name': name},
@@ -303,7 +393,7 @@ class Client extends _i2.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i8.Protocol(),
+         _i9.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,
@@ -315,6 +405,8 @@ class Client extends _i2.ServerpodClientShared {
     emailIdp = EndpointEmailIdp(this);
     jwtRefresh = EndpointJwtRefresh(this);
     classification = EndpointClassification(this);
+    chat = EndpointChat(this);
+    receipt = EndpointReceipt(this);
     greeting = EndpointGreeting(this);
     modules = Modules(this);
   }
@@ -325,6 +417,10 @@ class Client extends _i2.ServerpodClientShared {
 
   late final EndpointClassification classification;
 
+  late final EndpointChat chat;
+
+  late final EndpointReceipt receipt;
+
   late final EndpointGreeting greeting;
 
   late final Modules modules;
@@ -334,6 +430,8 @@ class Client extends _i2.ServerpodClientShared {
     'emailIdp': emailIdp,
     'jwtRefresh': jwtRefresh,
     'classification': classification,
+    'chat': chat,
+    'receipt': receipt,
     'greeting': greeting,
   };
 

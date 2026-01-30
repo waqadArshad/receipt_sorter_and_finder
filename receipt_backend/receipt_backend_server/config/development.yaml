@@ -7,6 +7,8 @@
 # facing ports.
 
 # Configuration for the main API server.
+maxRequestSize: 1048576
+
 apiServer:
   port: 8080
   publicHost: localhost
@@ -45,7 +47,7 @@ redis:
   #user: # defaults to empty
   #requireSsl: true # defaults to false
 
-maxRequestSize: 524288 # The maximum size of requests allowed in bytes
+# maxRequestSize: 524288 # The maximum size of requests allowed in bytes
 
 sessionLogs:
   persistentEnabled: true
